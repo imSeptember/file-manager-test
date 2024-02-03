@@ -1,0 +1,13 @@
+{
+    "name": "file-manager",
+    "version": "1.0.0",
+    "main": "src/index.js",
+    "scripts": {
+        "start": "node src/index.js"
+    },
+    "dependencies": {},
+    "devDependencies": {},
+    "engines": {
+        "node": "20.11.0"
+    }
+}

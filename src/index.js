@@ -243,6 +243,11 @@ function handleCommand(command) {
             console.log(`  Clock Rate: ${cpu.speed / 1000} GHz`);
             console.log('----------------------');
         });
+    } else if (command.trim() === 'os --homedir') {
+        // Get and print the home directory
+        const homeDir = os.homedir();
+        console.log(`Home Directory: ${homeDir}`);
+        result = true;
     } else {
         result = false;
     }

@@ -141,6 +141,40 @@ function handleCommand(command) {
             console.log('Error renaming file', error.message);
             result = false;
         }
+    } else if (command.startsWith('cp')) {
+        try {
+            const match = command.match(/^cp\s+(.+)\s+(.+)$/);
+            if (match) {
+                const sourceFilePath = match[1].trim();
+                const destinationDirectory = match[2].trim();
+
+                if (sourceFilePath && destinationDirectory) {
+                    const sourcePath = path.join(process.cwd(), sourceFilePath);
+                    const destinationPath = path.join(
+                        process.cwd(),
+                        destinationDirectory,
+                        path.basename(sourceFilePath)
+                    );
+
+                    fs.copyFileSync(sourcePath, destinationPath);
+                    console.log(
+                        `File "${sourceFilePath}" copied to "${destinationDirectory}" successfully.`
+                    );
+                    result = true;
+                } else {
+                    console.log(
+                        'Please provide valid paths for the "cp" command.'
+                    );
+                    result = false;
+                }
+            } else {
+                console.log('Invalid syntax for the "cp" command.');
+                result = false;
+            }
+        } catch (error) {
+            console.log('Error copying file', error.message);
+            result = false;
+        }
     } else {
         result = false;
     }

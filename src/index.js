@@ -111,6 +111,36 @@ function handleCommand(command) {
             console.log('Error creating file', error.message);
             result = false;
         }
+    } else if (command.startsWith('rn')) {
+        try {
+            const match = command.match(/^rn\s+(.+)\s+(.+)$/);
+            if (match) {
+                const oldFilePath = match[1].trim();
+                const newFileName = match[2].trim();
+
+                if (oldFilePath && newFileName) {
+                    const oldPath = path.join(process.cwd(), oldFilePath);
+                    const newPath = path.join(process.cwd(), newFileName);
+
+                    fs.renameSync(oldPath, newPath);
+                    console.log(
+                        `File "${oldFilePath}" renamed to "${newFileName}" successfully.`
+                    );
+                    result = true;
+                } else {
+                    console.log(
+                        'Please provide valid paths for the "rn" command.'
+                    );
+                    result = false;
+                }
+            } else {
+                console.log('Invalid syntax for the "rn" command.');
+                result = false;
+            }
+        } catch (error) {
+            console.log('Error renaming file', error.message);
+            result = false;
+        }
     } else {
         result = false;
     }

@@ -100,7 +100,6 @@ function handleCommand(command) {
                 if (fileName) {
                     const filePath = path.join(process.cwd(), fileName);
                     fs.writeFileSync(filePath, '');
-                    console.log(`File "${fileName}" created successfully.`);
                     result = true;
                 } else {
                     result = false;
@@ -182,7 +181,6 @@ function handleCommand(command) {
         if (filePath) {
             const fullPath = path.join(process.cwd(), filePath);
             fs.unlinkSync(fullPath);
-            console.log(`File "${filePath}" removed successfully.`);
             result = true;
         } else {
             console.log(
@@ -238,48 +236,67 @@ function handleCommand(command) {
         }
     } else if (command.startsWith('compress')) {
         try {
-            const filePath = command.slice(8).trim(); // Extract the file path
-            const destinationPath = filePath + '.br'; // Brotli compressed file extension
+            const filePathAndDestination = command.slice(8).trim();
+            const [filePath, destinationPath] =
+                filePathAndDestination.split(/\s+/);
 
-            const readStream = fs.createReadStream(filePath);
-            const writeStream = fs.createWriteStream(destinationPath);
+            const absolutePath = path.resolve(process.cwd(), filePath);
 
-            const brotliStream = zlib.createBrotliCompress();
+            // Check if the file exists
+            if (fs.existsSync(absolutePath)) {
+                const compressedFilePath = path.resolve(
+                    process.cwd(),
+                    destinationPath,
+                    path.basename(filePath) + '.br'
+                );
 
-            // Pipe the read stream through the Brotli compression stream to the write stream
-            readStream.pipe(brotliStream).pipe(writeStream);
+                const readStream = fs.createReadStream(absolutePath);
+                const writeStream = fs.createWriteStream(compressedFilePath);
 
-            writeStream.on('finish', () => {
-                result = true;
-            });
+                const brotliStream = zlib.createBrotliCompress();
+
+                // Pipe the read stream through the Brotli compression stream to the write stream
+                readStream.pipe(brotliStream).pipe(writeStream);
+
+                writeStream.on('finish', () => {
+                    console.log(
+                        `File "${absolutePath}" compressed to "${compressedFilePath}" successfully.`
+                    );
+                    // Additional operations or checks can be added here
+
+                    result = true;
+                });
+            } else {
+                console.log(`File "${absolutePath}" not found.`);
+                result = false;
+            }
         } catch (error) {
+            console.error(error);
             result = false;
         }
     } else if (command.startsWith('decompress')) {
         try {
             const filePath = command.slice(10).trim();
-            const destinationPath = filePath.replace(/\.br$/, '');
+            const destinationPath =
+                args[args.indexOf('path_to_destination') + 1] || '.'; // Default to current directory if not provided
+
             const readStream = fs.createReadStream(filePath);
-            const writeStream = fs.createWriteStream(destinationPath);
+            const writeStream = fs.createWriteStream(
+                path.join(process.cwd(), destinationPath)
+            );
             const brotliStream = zlib.createBrotliDecompress();
+
             // Pipe the read stream through the Brotli decompression stream to the write stream
             readStream.pipe(brotliStream).pipe(writeStream);
+
             writeStream.on('finish', () => {
                 console.log(
                     `File "${filePath}" decompressed to "${destinationPath}" successfully.`
                 );
-
-                // Calculate hash of original compressed file
-                const originalHash = calculateFileHash(filePath);
-
-                // Calculate hash of decompressed file
-                const decompressedHash = calculateFileHash(destinationPath);
-
-                // Compare hashes to ensure the integrity of decompression
-
                 result = true;
             });
         } catch (error) {
+            console.error('Error during decompression:', error.message);
             result = false;
         }
     } else {

@@ -231,6 +231,18 @@ function handleCommand(command) {
         // Get and print the default system End-Of-Line (EOL)
         console.log(JSON.stringify(os.EOL));
         result = true;
+    } else if (command.trim() === 'os --cpus') {
+        // Get and print host machine's CPU info
+        const cpus = os.cpus();
+
+        console.log(`Overall CPUs: ${cpus.length}`);
+
+        cpus.forEach((cpu, index) => {
+            console.log(`CPU ${index + 1}:`);
+            console.log(`  Model: ${cpu.model}`);
+            console.log(`  Clock Rate: ${cpu.speed / 1000} GHz`);
+            console.log('----------------------');
+        });
     } else {
         result = false;
     }

@@ -1,10 +1,11 @@
 const args = process.argv.slice(2);
 const os = require('os');
+const path = require('path');
+const fs = require('fs');
 
 let usernameArgIndex = args.indexOf('--username');
 let username =
     args[usernameArgIndex + 1].split('=')[1] || args[usernameArgIndex + 1];
-
 // Set the initial working directory to the user's home directory
 process.chdir(os.homedir());
 
@@ -16,12 +17,65 @@ function printWelcomeMessage() {
 
 printWelcomeMessage(); // Print at the beginning
 
-// Listen for the .exit command
+// Listen for the .exit command and other user inputs
 const readline = require('readline');
 const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
 });
+
+function handleCommand(command) {
+    let result;
+
+    if (command.startsWith('cd')) {
+        try {
+            const targetDirectory = command.slice(2).trim();
+            process.chdir(path.resolve(process.cwd(), targetDirectory));
+            result = true;
+        } catch (error) {
+            console.log('Error changing directory', error.message);
+            result = false;
+        }
+    } else if (command === 'ls') {
+        try {
+            const currentDirectory = process.cwd();
+            const contents = fs.readdirSync(currentDirectory);
+            const folders = contents.filter((item) =>
+                fs.statSync(path.join(currentDirectory, item)).isDirectory()
+            );
+            const files = contents.filter((item) => !folders.includes(item));
+            folders.sort();
+            files.sort();
+
+            console.log('Type\t\tName');
+            folders.forEach((folder) => console.log('Folder\t\t', folder));
+            files.forEach((file) => console.log('File\t\t', file));
+
+            result = true;
+        } catch (error) {
+            console.log('Error listing directory contents', error.message);
+            result = false;
+        }
+    } else if (command === 'up') {
+        try {
+            const parentDirectory = path.dirname(process.cwd());
+            if (parentDirectory !== process.cwd()) {
+                process.chdir('..');
+                result = true;
+            } else {
+                console.log('Already at the root directory');
+                result = false;
+            }
+        } catch (error) {
+            console.log('Error going up', error.message);
+            result = false;
+        }
+    } else {
+        result = false;
+    }
+
+    return result;
+}
 
 rl.on('line', (input) => {
     if (input.trim() === '.exit') {
@@ -29,50 +83,15 @@ rl.on('line', (input) => {
         rl.close();
         process.exit();
     } else {
-        // Your other operations here
         const result = handleCommand(input.trim());
         if (!result) {
             console.log('Invalid input');
-            console.log(`You are currently in ${process.cwd()}`);
         }
+
+        // Print the current working directory after each operation
+        console.log(`You are currently in ${process.cwd()}`);
     }
 });
-
-function handleCommand(command) {
-    let result;
-
-    switch (command) {
-        case 'ls':
-            try {
-                // Your logic for "ls" operation here
-                // For example: fs.readdirSync(process.cwd()).forEach(file => console.log(file));
-                result = true;
-            } catch (error) {
-                console.log('Invalid input', error.message);
-                result = false;
-            }
-            break;
-        case 'cd':
-            console.log('Changing directory...');
-            try {
-                // Your logic for "cd" operation here
-                // For example: process.chdir(newPath);
-                result = true;
-            } catch (error) {
-                console.log('Invalid input', error.message);
-                result = false;
-            }
-            break;
-        // Add more cases for other commands as needed
-        default:
-            result = false;
-    }
-
-    // Print the current working directory after each operation
-    console.log(`You are currently in ${process.cwd()}`);
-
-    return result;
-}
 
 // Handle SIGINT manually (Ctrl+C)
 rl.on('SIGINT', () => {

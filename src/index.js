@@ -2,6 +2,7 @@ const args = process.argv.slice(2);
 const os = require('os');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 
 let usernameArgIndex = args.indexOf('--username');
 let username =
@@ -248,6 +249,37 @@ function handleCommand(command) {
         const homeDir = os.homedir();
         console.log(`Home Directory: ${homeDir}`);
         result = true;
+    } else if (command.trim() === 'os --username') {
+        // Get and print the current user's username
+        const username = process.env.USERNAME || process.env.USER || 'Unknown';
+        console.log(`Current User's Username: ${username}`);
+        result = true;
+    } else if (command.trim() === 'os --architecture') {
+        // Get and print the CPU architecture
+        const cpuArchitecture = os.arch();
+        console.log(`CPU Architecture: ${cpuArchitecture}`);
+        result = true;
+    } else if (command.startsWith('hash')) {
+        try {
+            const filePath = command.slice(4).trim(); // Extract the file path
+
+            // Check if the file exists
+            if (fs.existsSync(filePath)) {
+                const fileContents = fs.readFileSync(filePath);
+                const hash = crypto
+                    .createHash('sha256')
+                    .update(fileContents)
+                    .digest('hex');
+                console.log(`Hash for file "${filePath}": ${hash}`);
+                result = true;
+            } else {
+                console.log(`File "${filePath}" not found.`);
+                result = false;
+            }
+        } catch (error) {
+            console.log('Error calculating hash', error.message);
+            result = false;
+        }
     } else {
         result = false;
     }

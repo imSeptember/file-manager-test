@@ -227,6 +227,10 @@ function handleCommand(command) {
             console.log('Error removing file', error.message);
             result = false;
         }
+    } else if (command === 'os --EOL') {
+        // Get and print the default system End-Of-Line (EOL)
+        console.log(JSON.stringify(os.EOL));
+        result = true;
     } else {
         result = false;
     }

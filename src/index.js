@@ -63,11 +63,28 @@ function handleCommand(command) {
                 process.chdir('..');
                 result = true;
             } else {
-                console.log('Already at the root directory');
+                console.log('You are already at the root directory');
                 result = false;
             }
         } catch (error) {
             console.log('Error going up', error.message);
+            result = false;
+        }
+    } else if (command.startsWith('cat')) {
+        try {
+            const filePath = command.slice(3).trim(); // Extract the file path
+            const fileStream = fs.createReadStream(filePath);
+
+            fileStream.on('data', (chunk) => {
+                process.stdout.write(chunk);
+            });
+
+            fileStream.on('end', () => {
+                result = true;
+            });
+        } catch (error) {
+            console.log('Error reading file', error.message);
+        } finally {
             result = false;
         }
     } else {

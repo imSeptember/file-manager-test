@@ -175,6 +175,58 @@ function handleCommand(command) {
             console.log('Error copying file', error.message);
             result = false;
         }
+    } else if (command.startsWith('mv')) {
+        try {
+            const match = command.match(/^mv\s+(.+)\s+(.+)$/);
+            if (match) {
+                const sourceFilePath = match[1].trim();
+                const destinationDirectory = match[2].trim();
+
+                if (sourceFilePath && destinationDirectory) {
+                    const sourcePath = path.join(process.cwd(), sourceFilePath);
+                    const destinationPath = path.join(
+                        process.cwd(),
+                        destinationDirectory,
+                        path.basename(sourceFilePath)
+                    );
+
+                    fs.renameSync(sourcePath, destinationPath);
+                    console.log(
+                        `File "${sourceFilePath}" moved to "${destinationDirectory}" successfully.`
+                    );
+                    result = true;
+                } else {
+                    console.log(
+                        'Please provide valid paths for the "mv" command.'
+                    );
+                    result = false;
+                }
+            } else {
+                console.log('Invalid syntax for the "mv" command.');
+                result = false;
+            }
+        } catch (error) {
+            console.log('Error moving file', error.message);
+            result = false;
+        }
+    } else if (command.startsWith('rm')) {
+        try {
+            const filePath = command.slice(2).trim(); // Extract the file path
+            if (filePath) {
+                const fullPath = path.join(process.cwd(), filePath);
+                fs.unlinkSync(fullPath);
+                console.log(`File "${filePath}" removed successfully.`);
+                result = true;
+            } else {
+                console.log(
+                    'Please provide a valid file path for the "rm" command.'
+                );
+                result = false;
+            }
+        } catch (error) {
+            console.log('Error removing file', error.message);
+            result = false;
+        }
     } else {
         result = false;
     }

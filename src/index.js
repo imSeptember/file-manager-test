@@ -87,6 +87,30 @@ function handleCommand(command) {
         } finally {
             result = false;
         }
+    } else if (command.startsWith('add')) {
+        try {
+            const match = command.match(/^add\s+(.+)$/);
+            if (match) {
+                const fileName = match[1].trim();
+                if (fileName) {
+                    const filePath = path.join(process.cwd(), fileName);
+                    fs.writeFileSync(filePath, '');
+                    console.log(`File "${fileName}" created successfully.`);
+                    result = true;
+                } else {
+                    console.log(
+                        'Please provide a valid file name for the "add" command.'
+                    );
+                    result = false;
+                }
+            } else {
+                console.log('Invalid syntax for the "add" command.');
+                result = false;
+            }
+        } catch (error) {
+            console.log('Error creating file', error.message);
+            result = false;
+        }
     } else {
         result = false;
     }

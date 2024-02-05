@@ -35,6 +35,7 @@ function calculateFileHash(filePath) {
 
 function handleCommand(command) {
     let result;
+    let mistake = 'Invalid input';
 
     if (command.startsWith('cd')) {
         try {
@@ -42,7 +43,6 @@ function handleCommand(command) {
             process.chdir(path.resolve(process.cwd(), targetDirectory));
             result = true;
         } catch (error) {
-            console.log('Error changing directory', error.message);
             result = false;
         }
     } else if (command === 'ls') {
@@ -62,7 +62,6 @@ function handleCommand(command) {
 
             result = true;
         } catch (error) {
-            console.log('Error listing directory contents', error.message);
             result = false;
         }
     } else if (command === 'up') {
@@ -70,32 +69,29 @@ function handleCommand(command) {
             const parentDirectory = path.dirname(process.cwd());
             if (parentDirectory !== process.cwd()) {
                 process.chdir('..');
-                result = true;
-            } else {
-                console.log('You are already at the root directory');
-                result = false;
             }
+            // Set result to true regardless of whether the directory changed or not
+            result = true;
         } catch (error) {
-            console.log('Error going up', error.message);
             result = false;
         }
     } else if (command.startsWith('cat')) {
-        try {
-            const filePath = command.slice(3).trim(); // Extract the file path
-            const fileStream = fs.createReadStream(filePath);
+        const filePath = command.slice(3).trim(); // Extract the file path
 
-            fileStream.on('data', (chunk) => {
-                process.stdout.write(chunk);
-            });
+        // Create a Readable stream and pipe it to process.stdout
+        const fileStream = fs.createReadStream(filePath);
+        result = true;
 
-            fileStream.on('end', () => {
-                result = true;
-            });
-        } catch (error) {
-            console.log('Error reading file', error.message);
-        } finally {
-            result = false;
-        }
+        // fileStream.on('error', (error) => {
+        //     result = false;
+        // });
+
+        fileStream.pipe(process.stdout);
+
+        // Listen for the 'end' event to indicate completion
+        fileStream.on('end', () => {
+            console.log('\n'); // Add a newline after printing file contents
+        });
     } else if (command.startsWith('add')) {
         try {
             const match = command.match(/^add\s+(.+)$/);
@@ -107,47 +103,30 @@ function handleCommand(command) {
                     console.log(`File "${fileName}" created successfully.`);
                     result = true;
                 } else {
-                    console.log(
-                        'Please provide a valid file name for the "add" command.'
-                    );
                     result = false;
                 }
             } else {
-                console.log('Invalid syntax for the "add" command.');
                 result = false;
             }
         } catch (error) {
-            console.log('Error creating file', error.message);
             result = false;
         }
     } else if (command.startsWith('rn')) {
-        try {
-            const match = command.match(/^rn\s+(.+)\s+(.+)$/);
-            if (match) {
-                const oldFilePath = match[1].trim();
-                const newFileName = match[2].trim();
+        const match = command.match(/^rn\s+(.+)\s+(.+)$/);
+        if (match) {
+            const oldFilePath = match[1].trim();
+            const newFileName = match[2].trim();
 
-                if (oldFilePath && newFileName) {
-                    const oldPath = path.join(process.cwd(), oldFilePath);
-                    const newPath = path.join(process.cwd(), newFileName);
+            if (oldFilePath && newFileName) {
+                const oldPath = path.join(process.cwd(), oldFilePath);
+                const newPath = path.join(process.cwd(), newFileName);
 
-                    fs.renameSync(oldPath, newPath);
-                    console.log(
-                        `File "${oldFilePath}" renamed to "${newFileName}" successfully.`
-                    );
-                    result = true;
-                } else {
-                    console.log(
-                        'Please provide valid paths for the "rn" command.'
-                    );
-                    result = false;
-                }
+                fs.renameSync(oldPath, newPath);
+                result = true;
             } else {
-                console.log('Invalid syntax for the "rn" command.');
                 result = false;
             }
-        } catch (error) {
-            console.log('Error renaming file', error.message);
+        } else {
             result = false;
         }
     } else if (command.startsWith('cp')) {
@@ -166,74 +145,49 @@ function handleCommand(command) {
                     );
 
                     fs.copyFileSync(sourcePath, destinationPath);
-                    console.log(
-                        `File "${sourceFilePath}" copied to "${destinationDirectory}" successfully.`
-                    );
                     result = true;
                 } else {
-                    console.log(
-                        'Please provide valid paths for the "cp" command.'
-                    );
                     result = false;
                 }
             } else {
-                console.log('Invalid syntax for the "cp" command.');
                 result = false;
             }
         } catch (error) {
-            console.log('Error copying file', error.message);
             result = false;
         }
     } else if (command.startsWith('mv')) {
-        try {
-            const match = command.match(/^mv\s+(.+)\s+(.+)$/);
-            if (match) {
-                const sourceFilePath = match[1].trim();
-                const destinationDirectory = match[2].trim();
+        const match = command.match(/^mv\s+(.+)\s+(.+)$/);
+        if (match) {
+            const sourceFilePath = match[1].trim();
+            const destinationDirectory = match[2].trim();
 
-                if (sourceFilePath && destinationDirectory) {
-                    const sourcePath = path.join(process.cwd(), sourceFilePath);
-                    const destinationPath = path.join(
-                        process.cwd(),
-                        destinationDirectory,
-                        path.basename(sourceFilePath)
-                    );
+            if (sourceFilePath && destinationDirectory) {
+                const sourcePath = path.join(process.cwd(), sourceFilePath);
+                const destinationPath = path.join(
+                    process.cwd(),
+                    destinationDirectory,
+                    path.basename(sourceFilePath)
+                );
 
-                    fs.renameSync(sourcePath, destinationPath);
-                    console.log(
-                        `File "${sourceFilePath}" moved to "${destinationDirectory}" successfully.`
-                    );
-                    result = true;
-                } else {
-                    console.log(
-                        'Please provide valid paths for the "mv" command.'
-                    );
-                    result = false;
-                }
+                fs.renameSync(sourcePath, destinationPath);
+                result = true;
             } else {
-                console.log('Invalid syntax for the "mv" command.');
                 result = false;
             }
-        } catch (error) {
-            console.log('Error moving file', error.message);
+        } else {
             result = false;
         }
     } else if (command.startsWith('rm')) {
-        try {
-            const filePath = command.slice(2).trim(); // Extract the file path
-            if (filePath) {
-                const fullPath = path.join(process.cwd(), filePath);
-                fs.unlinkSync(fullPath);
-                console.log(`File "${filePath}" removed successfully.`);
-                result = true;
-            } else {
-                console.log(
-                    'Please provide a valid file path for the "rm" command.'
-                );
-                result = false;
-            }
-        } catch (error) {
-            console.log('Error removing file', error.message);
+        const filePath = command.slice(2).trim(); // Extract the file path
+        if (filePath) {
+            const fullPath = path.join(process.cwd(), filePath);
+            fs.unlinkSync(fullPath);
+            console.log(`File "${filePath}" removed successfully.`);
+            result = true;
+        } else {
+            console.log(
+                'Please provide a valid file path for the "rm" command.'
+            );
             result = false;
         }
     } else if (command === 'os --EOL') {
@@ -268,29 +222,21 @@ function handleCommand(command) {
         console.log(`CPU Architecture: ${cpuArchitecture}`);
         result = true;
     } else if (command.startsWith('hash')) {
-        try {
-            const filePath = command.slice(4).trim(); // Extract the file path
+        const filePath = command.slice(4).trim(); // Extract the file path
 
-            // Check if the file exists
-            if (fs.existsSync(filePath)) {
-                const fileContents = fs.readFileSync(filePath);
-                const hash = crypto
-                    .createHash('sha256')
-                    .update(fileContents)
-                    .digest('hex');
-                console.log(`Hash for file "${filePath}": ${hash}`);
-                result = true;
-            } else {
-                console.log(`File "${filePath}" not found.`);
-                result = false;
-            }
-        } catch (error) {
-            console.log('Error calculating hash', error.message);
+        // Check if the file exists
+        if (fs.existsSync(filePath)) {
+            const fileContents = fs.readFileSync(filePath);
+            const hash = crypto
+                .createHash('sha256')
+                .update(fileContents)
+                .digest('hex');
+            console.log(`Hash for file "${filePath}": ${hash}`);
+            result = true;
+        } else {
             result = false;
         }
-    }
-
-    if (command.startsWith('compress')) {
+    } else if (command.startsWith('compress')) {
         try {
             const filePath = command.slice(8).trim(); // Extract the file path
             const destinationPath = filePath + '.br'; // Brotli compressed file extension
@@ -304,13 +250,9 @@ function handleCommand(command) {
             readStream.pipe(brotliStream).pipe(writeStream);
 
             writeStream.on('finish', () => {
-                console.log(
-                    `File "${filePath}" compressed to "${destinationPath}" successfully.`
-                );
                 result = true;
             });
         } catch (error) {
-            console.log('Error compressing file', error.message);
             result = false;
         }
     } else if (command.startsWith('decompress')) {
@@ -334,23 +276,22 @@ function handleCommand(command) {
                 const decompressedHash = calculateFileHash(destinationPath);
 
                 // Compare hashes to ensure the integrity of decompression
-                if (originalHash === decompressedHash) {
-                    console.log('Hashes match. Decompression successful.');
-                } else {
-                    console.log(
-                        'Hashes do not match. Decompression may have issues.'
-                    );
-                }
+
                 result = true;
             });
         } catch (error) {
-            console.log('Error decompressing file', error.message);
             result = false;
         }
     } else {
         result = false;
     }
-    return result;
+
+    if (result === true) {
+        return result;
+    } else {
+        console.log(mistake);
+        return result;
+    }
 }
 
 rl.on('line', (input) => {
@@ -360,10 +301,6 @@ rl.on('line', (input) => {
         process.exit();
     } else {
         const result = handleCommand(input.trim());
-        if (!result) {
-            console.log('Invalid input');
-        }
-
         // Print the current working directory after each operation
         console.log(`You are currently in ${process.cwd()}`);
     }
